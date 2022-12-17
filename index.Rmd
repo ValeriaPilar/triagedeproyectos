@@ -1,0 +1,79 @@
+---
+output: html_document
+runtime: shiny
+---
+
+
+```{r, echo= FALSE}
+
+# Incluye la librería shiny
+library(shiny)
+library(shinythemes)
+
+# Crea la aplicación Shiny con la interfaz de usuario y el servidor
+shinyApp(
+   ui = fluidPage(theme = shinytheme("cerulean"),
+      # Título de la aplicación
+      titlePanel("Triage de Proyectos"),
+      
+      # Primer paso: Equipo de trabajo
+      h3("Paso 1: Equipo de trabajo"),
+      textInput("equipo", "Equipo", ""),
+      selectInput("num_integrantes", "Cantidad de personas en el equipo",
+                  choices = 1:30),
+      uiOutput("integrantes"),
+      
+      # Segundo paso: Proyectos
+      h3("Paso 2: Proyectos"),
+      selectInput("num_proyectos", "Cantidad de proyectos",
+                  choices = 1:30),
+      uiOutput("proyectos"),
+      
+      # Tercer paso: Nivel de actividad
+      h3("Paso 3: Nivel de actividad"),
+      verbatimTextOutput("proyectos_seleccionados"),
+      uiOutput("actividad"),
+      
+      # Botón "Siguiente"
+      actionButton("siguiente", "Siguiente")
+   ),
+   server = function(input, output) {
+      # Crea una lista de campos de texto para los integrantes del equipo
+      output$integrantes <- renderUI({
+         lapply(1:input$num_integrantes, function(i) {
+            textInput(paste0("integrante_", i), paste0("Integrante ", i), "")
+         })
+      })
+      
+      # Crea una lista de campos de texto para los proyectos
+      output$proyectos <- renderUI({
+         lapply(1:input$num_proyectos, function(i) {
+            textInput(paste0("proyecto_", i), paste0("Proyecto ", i), "")
+         })
+      })
+      
+      # Muestra los proyectos seleccionados en el tercer paso
+      proyectos_seleccionados <- reactive({
+         proyectos <- c()
+         for (i in 1:input$num_proyectos) {
+            proyectos <- c(proyectos, input[[paste0("proyecto_", i)]])
+         }
+         proyectos
+      })
+      output$proyectos_seleccionados <- renderPrint({
+         proyectos_seleccionados()
+      })
+      
+      # Crea una lista de radio buttons para seleccionar el nivel de actividad de cada proyecto
+      output$actividad <- renderUI({
+         lapply(proyectos_seleccionados(), function(proyecto) {
+            radioButtons(paste0("actividad_", proyecto), proyecto,
+                         choices = c("Alta", "Media", "Baja"),
+                         inline = TRUE)
+         })
+      })
+   }
+)
+
+
+```
